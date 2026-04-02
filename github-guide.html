@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub 機能ガイド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d11;
+    --surface: #111620;
+    --surface2: #171d28;
+    --border: #1e2736;
+    --accent-issue: #58a6ff;
+    --accent-pr: #3fb950;
+    --accent-project: #d2a8ff;
+    --accent-warn: #e3b341;
+    --text: #c9d1d9;
+    --text-muted: #6e7681;
+    --text-bright: #f0f6fc;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Noto Sans JP', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-weight: 300;
+    line-height: 1.8;
+    min-height: 100vh;
+  }
+
+  /* grid noise bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(88,166,255,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(88,166,255,.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 64px 0 48px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 64px;
+  }
+
+  .header-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .2em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-family: var(--mono);
+    font-size: clamp(28px, 5vw, 46px);
+    font-weight: 600;
+    color: var(--text-bright);
+    line-height: 1.2;
+    letter-spacing: -.02em;
+  }
+
+  h1 span.iss { color: var(--accent-issue); }
+  h1 span.pr  { color: var(--accent-pr); }
+  h1 span.pj  { color: var(--accent-project); }
+
+  .header-sub {
+    margin-top: 16px;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  /* ── TOC ── */
+  .toc {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 64px;
+  }
+
+  .toc a {
+    font-family: var(--mono);
+    font-size: 12px;
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    transition: all .2s;
+  }
+  .toc a:hover { color: var(--text-bright); border-color: #3d4b5e; }
+  .toc a.iss { border-color: var(--accent-issue); color: var(--accent-issue); }
+  .toc a.pr  { border-color: var(--accent-pr);    color: var(--accent-pr); }
+  .toc a.pj  { border-color: var(--accent-project); color: var(--accent-project); }
+
+  /* ── SECTION ── */
+  section {
+    margin-bottom: 72px;
+    animation: fadeUp .5s ease both;
+  }
+  section:nth-child(2) { animation-delay: .1s; }
+  section:nth-child(3) { animation-delay: .2s; }
+  section:nth-child(4) { animation-delay: .3s; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .15em;
+    padding: 4px 10px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .badge.iss { background: rgba(88,166,255,.15); color: var(--accent-issue); }
+  .badge.pr  { background: rgba(63,185,80,.15);  color: var(--accent-pr); }
+  .badge.pj  { background: rgba(210,168,255,.15); color: var(--accent-project); }
+
+  h2 {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-bright);
+  }
+
+  .tagline {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-muted);
+    background: var(--surface);
+    border-left: 3px solid var(--border);
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    border-radius: 0 4px 4px 0;
+  }
+  .tagline strong { color: var(--text-bright); }
+
+  p {
+    font-size: 15px;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+
+  /* ── CODE BLOCK ── */
+  .code-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 24px 0;
+  }
+
+  .code-block-header {
+    background: var(--surface2);
+    padding: 8px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .code-block-header::before {
+    content: '';
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    opacity: .4;
+    box-shadow: 14px 0 0 rgba(255,255,255,.15), 28px 0 0 rgba(255,255,255,.1);
+  }
+
+  pre {
+    padding: 20px;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.9;
+    color: #8b9dc3;
+    overflow-x: auto;
+    tab-size: 2;
+  }
+
+  pre .c  { color: var(--text-muted); }           /* comment */
+  pre .b  { color: var(--text-bright); }           /* bright */
+  pre .g  { color: var(--accent-pr); }             /* green */
+  pre .bl { color: var(--accent-issue); }          /* blue */
+  pre .p  { color: var(--accent-project); }        /* purple */
+  pre .y  { color: var(--accent-warn); }           /* yellow */
+
+  /* ── GRID CARDS ── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    transition: border-color .2s, transform .2s;
+  }
+  .card:hover { border-color: #3d4b5e; transform: translateY(-2px); }
+
+  .card-icon {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  .card-title {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-bright);
+    margin-bottom: 6px;
+  }
+
+  .card-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 24px 0;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    font-family: var(--mono);
+  }
+
+  th {
+    background: var(--surface2);
+    color: var(--text-muted);
+    font-weight: 400;
+    text-align: left;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: top;
+    line-height: 1.6;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+
+  /* ── FLOW ── */
+  .flow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 24px 0;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .flow-step {
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .flow-step.iss { border-color: var(--accent-issue); color: var(--accent-issue); background: rgba(88,166,255,.08); }
+  .flow-step.pr  { border-color: var(--accent-pr);    color: var(--accent-pr);    background: rgba(63,185,80,.08); }
+  .flow-step.pj  { border-color: var(--accent-project); color: var(--accent-project); background: rgba(210,168,255,.08); }
+  .flow-step.mg  { border-color: var(--accent-warn);  color: var(--accent-warn);  background: rgba(227,179,65,.08); }
+
+  .flow-arrow {
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 16px;
+  }
+
+  /* ── CALLOUT ── */
+  .callout {
+    display: flex;
+    gap: 12px;
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin: 24px 0;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .callout.tip  { background: rgba(63,185,80,.08);  border: 1px solid rgba(63,185,80,.2); }
+  .callout.info { background: rgba(88,166,255,.08); border: 1px solid rgba(88,166,255,.2); }
+  .callout.note { background: rgba(210,168,255,.08); border: 1px solid rgba(210,168,255,.2); }
+
+  .callout-icon { font-size: 16px; flex-shrink: 0; margin-top: 2px; }
+  .callout-body { color: var(--text); }
+  .callout-body strong { color: var(--text-bright); }
+
+  /* ── SUMMARY TABLE ── */
+  .summary-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 32px;
+    margin-top: 64px;
+  }
+
+  .summary-section h2 {
+    font-size: 16px;
+    margin-bottom: 20px;
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* scroll indicator */
+  .progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent-issue), var(--accent-pr), var(--accent-project));
+    z-index: 100;
+    transition: width .1s;
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progress"></div>
+
+<div class="wrap">
+
+  <header>
+    <div class="header-label">// GitHub 機能ガイド</div>
+    <h1>
+      <span class="iss">Issue</span> ·
+      <span class="pr">Pull Request</span> ·
+      <span class="pj">Projects</span>
+    </h1>
+    <p class="header-sub">GitHub の3つのコア機能をゼロから理解する</p>
+  </header>
+
+  <nav class="toc">
+    <a href="#issue"   class="iss">#01 Issue</a>
+    <a href="#pr"      class="pr" >#02 Pull Request</a>
+    <a href="#project" class="pj" >#03 Projects</a>
+    <a href="#flow"              >#04 連携フロー</a>
+    <a href="#summary"           >#05 まとめ</a>
+  </nav>
+
+
+  <!-- ──────────────────────────────
+       ISSUE
+  ────────────────────────────── -->
+  <section id="issue">
+    <div class="section-header">
+      <span class="badge iss">01</span>
+      <h2>Issue</h2>
+    </div>
+
+    <div class="tagline">
+      <strong>一言で：</strong>リポジトリに紐付いた「タスクチケット・メモ・バグ報告票」
+    </div>
+
+    <p>
+      Issue は GitHub 上のスレッド1件1件のこと。
+      バグ報告・機能要望・TODO・議論など、目的は何でもよい。
+      番号（<code style="font-family:var(--mono);color:var(--accent-issue)">#12</code> のような形式）が自動付与され、
+      PR やコミットから参照できる。
+    </p>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">🐛</div>
+        <div class="card-title">バグ報告</div>
+        <div class="card-desc">「〇〇したらクラッシュする」「エラーが出る」など再現手順と一緒に記録</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">✨</div>
+        <div class="card-title">機能要望</div>
+        <div class="card-desc">「〇〇を追加したい」「UX を改善したい」など新機能のアイデアを残す</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📋</div>
+        <div class="card-title">TODO メモ</div>
+        <div class="card-desc">「リファクタリング」「ドキュメント更新」など後回しにしたいタスク</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">💬</div>
+        <div class="card-title">議論の場所</div>
+        <div class="card-desc">「設計どうする？」「ライブラリどれ使う？」などチームでの意思決定ログ</div>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header">Issue の構成要素</div>
+      <pre>
+<span class="bl">#12</span>  <span class="b">「ログイン機能を実装する」</span>          <span class="c">← タイトル + 番号</span>
+ │
+ ├─ 本文                              <span class="c">← Markdown で書ける</span>
+ ├─ Assignee  <span class="y">@kichima</span>              <span class="c">← 担当者</span>
+ ├─ Label     <span class="g">enhancement</span>           <span class="c">← bug / enhancement / など</span>
+ ├─ Milestone <span class="p">v1.0</span>                  <span class="c">← 期限単位のグループ</span>
+ ├─ コメントスレッド                   <span class="c">← 議論をここに集約</span>
+ └─ 紐付いた PR  <span class="g">#34</span>               <span class="c">← マージ時に自動クローズ</span>
+      </pre>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-icon">💡</div>
+      <div class="callout-body">
+        <strong>PR で自動クローズ</strong><br>
+        PR の説明文に <code style="font-family:var(--mono);color:var(--accent-pr)">Closes #12</code> と書くと、
+        その PR がマージされた瞬間に Issue #12 が自動でクローズされる。
+        手動で閉じる必要がなくなり、実装と課題が紐付いた状態で履歴に残る。
+      </div>
+    </div>
+
+    <div class="callout info">
+      <div class="callout-icon">👤</div>
+      <div class="callout-body">
+        <strong>個人開発でも Issue は有効</strong><br>
+        チーム用のツールという印象があるが、1人でも「なぜこの実装をしたか」の
+        意思決定ログとして機能する。後で読み返したとき文脈がわかる。
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ──────────────────────────────
+       PULL REQUEST
+  ────────────────────────────── -->
+  <section id="pr">
+    <div class="section-header">
+      <span class="badge pr">02</span>
+      <h2>Pull Request</h2>
+    </div>
+
+    <div class="tagline">
+      <strong>一言で：</strong>「このブランチを main にマージしていいか確認・レビューする仕組み」
+    </div>
+
+    <p>
+      機能開発は <code style="font-family:var(--mono);color:var(--accent-pr)">feature/xxx</code> などのブランチで行い、
+      完成したら PR を作成して main へのマージを依頼する。
+      差分の確認・コメント・CI テストが1画面に集約されるのが特徴。
+    </p>
+
+    <div class="code-block">
+      <div class="code-block-header">PR の基本フロー</div>
+      <pre>
+<span class="b">main</span> ブランチ
+  └─ <span class="g">feature/login</span> ブランチを切る
+       │
+       ├─ コミット・コミット・コミット
+       │
+       └─ <span class="bl">git push origin feature/login</span>
+            │
+            └─ GitHub で <span class="y">PR を作成</span>
+                 │  タイトル・説明・Closes #12 を記載
+                 │
+                 ├─ <span class="c">レビュアーがコメント → 修正 → 再レビュー</span>
+                 ├─ <span class="c">CI（GitHub Actions）が自動テスト</span>
+                 │
+                 └─ 承認 → <span class="p">main へマージ</span> → Issue 自動クローズ
+      </pre>
+    </div>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">🔍</div>
+        <div class="card-title">差分の可視化</div>
+        <div class="card-desc">どのファイルの何行が変わったか一目でわかる。行単位でコメントを付けられる</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚙️</div>
+        <div class="card-title">CI との連携</div>
+        <div class="card-desc">テストが失敗したらマージをブロックするルールを設定できる</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔀</div>
+        <div class="card-title">マージ戦略</div>
+        <div class="card-desc">Squash merge / Rebase merge / Merge commit の3種類から選択できる</div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>マージ戦略</th>
+            <th>コミット履歴</th>
+            <th>使いどころ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--accent-pr)">Squash merge</td>
+            <td>1コミットにまとめて main へ</td>
+            <td>作業中の細かいコミットを整理したいとき</td>
+          </tr>
+          <tr>
+            <td style="color:var(--accent-pr)">Rebase merge</td>
+            <td>コミットを並べ直して main へ</td>
+            <td>履歴を一直線に保ちたいとき</td>
+          </tr>
+          <tr>
+            <td style="color:var(--accent-pr)">Merge commit</td>
+            <td>マージコミットを生成</td>
+            <td>ブランチの存在を履歴に残したいとき</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-icon">💡</div>
+      <div class="callout-body">
+        <strong>個人開発でも PR 運用は有益</strong><br>
+        直接 main にコミットせず、PR 経由でマージする習慣を作るだけで
+        <code style="font-family:var(--mono);color:var(--accent-pr)">main</code> が常にクリーンな状態に保たれる。
+        「なぜこの変更をしたか」の説明も PR の本文に残せる。
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ──────────────────────────────
+       PROJECTS
+  ────────────────────────────── -->
+  <section id="project">
+    <div class="section-header">
+      <span class="badge pj">03</span>
+      <h2>Projects</h2>
+    </div>
+
+    <div class="tagline">
+      <strong>一言で：</strong>Issue・PR をカードとして並べる「タスク管理ボード」（Trello / Jira に近い）
+    </div>
+
+    <p>
+      リポジトリの Issue / PR を自動で取り込み、カンバン・テーブル・ロードマップなど
+      複数の形式で進捗を管理できる。<br>
+      現在は <strong style="color:var(--accent-project)">Projects（新）</strong> が推奨。
+      旧 Classic Projects は非推奨になっている。
+    </p>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">📌</div>
+        <div class="card-title">ボード表示</div>
+        <div class="card-desc">Todo / In Progress / Done のカンバン形式でカードを管理</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <div class="card-title">テーブル表示</div>
+        <div class="card-desc">スプレッドシートのように Issue を一覧化してソート・フィルタ</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🗺️</div>
+        <div class="card-title">ロードマップ</div>
+        <div class="card-desc">時系列でタスクの開始・終了を Gantt チャート的に可視化</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <div class="card-title">自動化</div>
+        <div class="card-desc">PR マージ → Done に移動、Issue クローズ → アーカイブ、など</div>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header">Projects のデータ構造イメージ</div>
+      <pre>
+<span class="p">Project: Kage v1.0</span>
+  │
+  ├─ <span class="c">【Todo】</span>
+  │    ├─ <span class="bl">#5</span>  transit delay アラート実装
+  │    └─ <span class="bl">#8</span>  通知チャンネル設定 UI
+  │
+  ├─ <span class="c">【In Progress】</span>
+  │    └─ <span class="bl">#3</span>  行動パターン学習ロジック  ←  <span class="g">PR #21</span> 紐付き
+  │
+  └─ <span class="c">【Done】</span>
+       └─ <span class="bl">#1</span>  初期セットアップ  ← <span class="y">Closed</span>
+      </pre>
+    </div>
+
+    <div class="callout note">
+      <div class="callout-icon">📝</div>
+      <div class="callout-body">
+        <strong>カスタムフィールドが便利</strong><br>
+        優先度（High / Medium / Low）・担当者・期日・ストーリーポイントなど
+        独自フィールドを自由に追加できる。スプレッドシートで管理していたものを
+        そのまま GitHub に持ち込めるイメージ。
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ──────────────────────────────
+       FLOW
+  ────────────────────────────── -->
+  <section id="flow">
+    <div class="section-header">
+      <span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-muted)">04</span>
+      <h2 style="color:var(--text)">3機能の連携フロー</h2>
+    </div>
+
+    <p>3つを組み合わせると、開発の流れが Issue 起点で一本化される。</p>
+
+    <div class="flow">
+      <div class="flow-step pj">Projects にタスク追加</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step iss">Issue 起票 #12</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">ブランチ切る</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">実装・コミット</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step pr">PR 作成<br><small>Closes #12</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">レビュー・CI</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step mg">マージ</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step iss">Issue 自動クローズ</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step pj">Projects → Done</div>
+    </div>
+
+    <div class="callout info">
+      <div class="callout-icon">🔗</div>
+      <div class="callout-body">
+        <strong>全部使わなくてもいい</strong><br>
+        最初は <strong>Issue だけ</strong>でも十分。慣れてきたら PR 運用を追加し、
+        タスクが増えてきたら Projects を導入する、という段階的な取り入れ方が現実的。
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ──────────────────────────────
+       SUMMARY
+  ────────────────────────────── -->
+  <section id="summary">
+    <div class="summary-section">
+      <h2>// まとめ</h2>
+      <div class="table-wrap" style="margin:0; border-radius:6px;">
+        <table>
+          <thead>
+            <tr>
+              <th>機能</th>
+              <th>目的</th>
+              <th>主役</th>
+              <th>使う場面</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="color:var(--accent-issue);font-family:var(--mono)">Issue</td>
+              <td>タスク・バグの記録と議論</td>
+              <td>テキスト・コメント</td>
+              <td>何をやるか整理するとき</td>
+            </tr>
+            <tr>
+              <td style="color:var(--accent-pr);font-family:var(--mono)">Pull Request</td>
+              <td>コード変更のレビュー・マージ管理</td>
+              <td>ブランチの差分</td>
+              <td>コードを書き終えたとき</td>
+            </tr>
+            <tr>
+              <td style="color:var(--accent-project);font-family:var(--mono)">Projects</td>
+              <td>タスク・進捗の可視化</td>
+              <td>Issue / PR のリスト</td>
+              <td>全体の進捗を把握したいとき</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span style="color:var(--accent-issue)">Issue</span> ·
+    <span style="color:var(--accent-pr)">Pull Request</span> ·
+    <span style="color:var(--accent-project)">Projects</span>
+    &nbsp;—&nbsp; GitHub 機能ガイド
+  </footer>
+
+</div>
+
+<script>
+  window.addEventListener('scroll', () => {
+    const el = document.getElementById('progress');
+    const total = document.body.scrollHeight - window.innerHeight;
+    const pct = (window.scrollY / total) * 100;
+    el.style.width = pct + '%';
+  });
+</script>
+
+</body>
+</html>
